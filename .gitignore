@@ -1,0 +1,24 @@
+.DS_Store
+node_modules
+/build
+/.svelte-kit
+/package
+.env
+.env.*
+!.env.example
+.vercel
+.output
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+yarn.lock
+
+__pycache__
+
+params_output
+
+static/consent-form.pdf
+
+# 模型权重不纳入 git（单文件 ~600MB，推送会反复中断）。
+# 英文权重保留在本地 static/model-v2/ 供本地开发；中文权重将另行生成。
+# 需要提交大模型时请用分批提交（每批 ~10 个 chunk）或 Git LFS。
+static/model-v2/
