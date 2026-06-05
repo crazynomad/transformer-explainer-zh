@@ -27,13 +27,30 @@ export const isModelRunning = writable(false);
 export const isFetchingModel = writable(true);
 export const isLoaded = writable(false);
 
-export const inputTextExample = [
-	'Data visualization empowers users to',
-	'Artificial Intelligence is transforming the',
-	'As the spaceship was approaching the',
-	'On the deserted planet they discovered a',
-	'IEEE VIS conference highlights the'
-];
+// ============================================================================
+// 模型开关：默认 'gpt2'（英文，开箱即用）。
+// 用 src/utils/model/export_chinese.py 生成中文资产后，改为 'gpt2-zh' 即切换中文版。
+// ============================================================================
+export const ACTIVE_MODEL = 'gpt2';
+
+const inputTextExampleMap: Record<string, string[]> = {
+	gpt2: [
+		'Data visualization empowers users to',
+		'Artificial Intelligence is transforming the',
+		'As the spaceship was approaching the',
+		'On the deserted planet they discovered a',
+		'IEEE VIS conference highlights the'
+	],
+	'gpt2-zh': [
+		'人工智能正在改变',
+		'数据可视化让用户能够',
+		'在那个荒凉的星球上，他们发现了',
+		'机器学习的核心思想是',
+		'今天天气非常'
+	]
+};
+
+export const inputTextExample = inputTextExampleMap[ACTIVE_MODEL] ?? inputTextExampleMap.gpt2;
 
 const initialExIdx = 0;
 export const selectedExampleIdx = writable<number>(initialExIdx);
@@ -47,10 +64,34 @@ export const tokens = writable<string[]>(ex0?.tokens);
 export const tokenIds = writable<number[]>(ex0?.tokenIds);
 
 export const modelMetaMap: Record<string, ModelMetaData> = {
-	gpt2: { layer_num: 12, attention_head_num: 12, dimension: 768, chunkTotal: 63 },
+	gpt2: {
+		layer_num: 12,
+		attention_head_num: 12,
+		dimension: 768,
+		chunkTotal: 63,
+		tokenizer: 'Xenova/gpt2',
+		localTokenizer: false,
+		addSpecialTokens: false,
+		hasCachedExamples: true
+	},
+	// 中文版（uer/gpt2-chinese-cluecorpussmall）。结构与英文 GPT-2 相同（12/12/768），
+	// 词表 21128（字符级，无乱码）。chunkTotal 需在跑完 export_chinese.py 后改成实际 N。
+	'gpt2-zh': {
+		layer_num: 12,
+		attention_head_num: 12,
+		dimension: 768,
+		chunkTotal: 63, // TODO: 改成 export_chinese.py 打印的 chunk 数 N
+		tokenizer: 'gpt2-chinese', // 本地：static/models/gpt2-chinese/
+		localTokenizer: true,
+		addSpecialTokens: false, // BertTokenizer 默认会加 [CLS]/[SEP]，必须关掉
+		hasCachedExamples: false // 中文示例缓存尚未生成（见 INSTRUCTIONS）
+	},
 	'gpt2-medium': { layer_num: 24, attention_head_num: 16, dimension: 1024 },
 	'gpt2-large': { layer_num: 36, attention_head_num: 20, dimension: 1280 }
 };
+
+// 当前激活模型的元数据（供 +page.svelte / data.ts 读取分词器、chunk 数等）
+export const activeModelMeta: ModelMetaData = modelMetaMap[ACTIVE_MODEL];
 
 // selected token vector
 export const highlightedToken = writable<HighlightedToken>({
@@ -74,7 +115,7 @@ export const inputText = writable(inputTextExample[initialExIdx]);
 // export const tokens = derived(inputText, ($inputText) => $inputText.trim().split(' '));
 
 // selected model and meta data
-const initialSelectedModel = 'gpt2';
+const initialSelectedModel = ACTIVE_MODEL;
 export const selectedModel = writable(initialSelectedModel);
 export const modelMeta = derived(selectedModel, ($selectedModel) => modelMetaMap[$selectedModel]);
 

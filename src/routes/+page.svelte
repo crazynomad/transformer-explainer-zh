@@ -19,7 +19,8 @@
 		isOnBlockTransition,
 		blockIdx,
 		isTextbookOpen,
-		userId
+		userId,
+		activeModelMeta
 	} from '~/store';
 	import { PreTrainedTokenizer } from '@xenova/transformers';
 	import Sankey from '~/components/Sankey.svelte';
@@ -36,9 +37,10 @@
 
 	import { adjustTemperature, runModel, fakeRunWithCachedData } from '~/utils/data';
 	import { fetchAndMergeChunks } from '~/utils/fetchChunks';
+	import { installExampleCapture } from '~/utils/captureExample';
 	import WeightPopovers from '~/components/WeightPopovers.svelte';
 	import { fade } from 'svelte/transition';
-	import { AutoTokenizer } from '@xenova/transformers';
+	import { AutoTokenizer, env as transformersEnv } from '@xenova/transformers';
 	import { ex0, ex1, ex2, ex3, ex4 } from '~/constants/examples';
 	import BlockTransition from '~/components/BlockTransition.svelte';
 	import QKV from '~/components/QKV.svelte';
@@ -52,8 +54,19 @@
 
 	// fetch model
 	onMount(async () => {
-		const gpt2Tokenizer = await AutoTokenizer.from_pretrained('Xenova/gpt2');
+		// 中文版：从 static/models/<name>/ 本地加载分词器（无需联网）。
+		// 英文版：保持原行为，从 HuggingFace 远程加载 Xenova/gpt2。
+		if (activeModelMeta?.localTokenizer) {
+			transformersEnv.allowRemoteModels = false;
+			transformersEnv.allowLocalModels = true;
+			transformersEnv.localModelPath = `${base}/models/`;
+		}
+		const tokenizerName = activeModelMeta?.tokenizer ?? 'Xenova/gpt2';
+		const gpt2Tokenizer = await AutoTokenizer.from_pretrained(tokenizerName);
 		active = true;
+
+		// 开发期：暴露 window.__dumpExample() 用于生成中文示例缓存（见 captureExample.ts）
+		if (import.meta.env.DEV) installExampleCapture();
 
 		const unsubscribe = subscribeInputs(gpt2Tokenizer);
 
@@ -66,7 +79,7 @@
 
 	// Fetch model onnx
 	const fetchModel = async () => {
-		const chunkNum = 63; //TODO: move to model meta
+		const chunkNum = activeModelMeta?.chunkTotal ?? 63;
 		const chunkUrls = Array(chunkNum)
 			.fill(0)
 			.map((d, i) => `${base}/model-v2/gpt2.onnx.part${i}`);
@@ -89,6 +102,12 @@
 
 		isFetchingModel.set(false);
 
+		// 无预生成示例缓存的模型（如中文版）：模型加载完后主动触发一次实时推理，
+		// 否则初始画面会停留在 store 的英文默认数据上。
+		if (!activeModelMeta?.hasCachedExamples) {
+			inputText.update((v) => v);
+		}
+
 		const loadTime = Date.now() - appStartTime;
 		window.dataLayer?.push({
 			event: `model-loaded`,
@@ -103,6 +122,10 @@
 	const subscribeInputs = (tokenizer: PreTrainedTokenizer) => {
 		const runModelOrCache = () => {
 			if ($isFetchingModel || !$modelSession) {
+				// 没有预生成缓存的模型（如中文版）：模型未就绪时先不渲染，
+				// 等 fetchModel 完成后由其主动触发一次实时推理。
+				if (!activeModelMeta?.hasCachedExamples) return;
+
 				const cachedData = cachedDataMap[$selectedExampleIdx];
 
 				fakeRunWithCachedData({

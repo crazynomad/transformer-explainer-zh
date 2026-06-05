@@ -7,7 +7,8 @@ import {
 	isModelRunning,
 	predictedToken,
 	modelSession,
-	modelMetaMap
+	modelMetaMap,
+	activeModelMeta
 } from '~/store';
 import { get } from 'svelte/store';
 import { reshapeArray } from './array';
@@ -114,7 +115,10 @@ export const adjustTemperature = async ({
 };
 
 export const getTokenization = async (tokenizer: PreTrainedTokenizer, input: string) => {
-	const token_ids = tokenizer.encode(input);
+	// 中文 BertTokenizer 默认会插入 [CLS]/[SEP]，必须关掉；GPT-2 本就不加，故对两者都安全。
+	const token_ids = tokenizer.encode(input, null, {
+		add_special_tokens: activeModelMeta?.addSpecialTokens ?? false
+	});
 	const input_tokens = token_ids.map((id) => tokenizer.decode([id])).flat();
 
 	return {

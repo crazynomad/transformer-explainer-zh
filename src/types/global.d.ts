@@ -18,6 +18,10 @@ type ModelMetaData = {
 	attention_head_num: number;
 	dimension: number;
 	chunkTotal?: number;
+	tokenizer?: string; // 分词器名称：远程 HF id（如 'Xenova/gpt2'）或本地模型名（如 'gpt2-chinese'）
+	localTokenizer?: boolean; // true=从 static/models 本地加载（中文版用）
+	addSpecialTokens?: boolean; // 分词时是否加特殊 token（中文 BertTokenizer 需为 false）
+	hasCachedExamples?: boolean; // 是否有预生成的 exN 示例缓存（无则桌面端等模型加载后实时跑）
 };
 
 type HighlightedToken = {
