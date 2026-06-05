@@ -31,7 +31,7 @@ export const isLoaded = writable(false);
 // 模型开关：默认 'gpt2'（英文，开箱即用）。
 // 用 src/utils/model/export_chinese.py 生成中文资产后，改为 'gpt2-zh' 即切换中文版。
 // ============================================================================
-export const ACTIVE_MODEL = 'gpt2';
+export const ACTIVE_MODEL = 'gpt2-zh';
 
 const inputTextExampleMap: Record<string, string[]> = {
 	gpt2: [
@@ -80,7 +80,7 @@ export const modelMetaMap: Record<string, ModelMetaData> = {
 		layer_num: 12,
 		attention_head_num: 12,
 		dimension: 768,
-		chunkTotal: 63, // TODO: 改成 export_chinese.py 打印的 chunk 数 N
+		chunkTotal: 46, // export_chinese.py 实测：中文模型切出 46 个 chunk
 		tokenizer: 'gpt2-chinese', // 本地：static/models/gpt2-chinese/
 		localTokenizer: true,
 		addSpecialTokens: false, // BertTokenizer 默认会加 [CLS]/[SEP]，必须关掉

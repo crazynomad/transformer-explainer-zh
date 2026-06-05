@@ -32,7 +32,9 @@ from model import GPT, GPTConfig  # noqa: E402
 # ----------------------------------------------------------------------------
 # 配置
 # ----------------------------------------------------------------------------
-HF_MODEL = "uer/gpt2-chinese-cluecorpussmall"   # 中文 GPT-2（12/12/768, vocab 21128）
+# 默认从 HuggingFace 拉取；也可用环境变量 GPT2_ZH_MODEL 指向本地已下载的模型目录
+# （网络不稳定时可先用 curl 断点续传把模型文件下到本地，再指过去）。
+HF_MODEL = os.environ.get("GPT2_ZH_MODEL", "uer/gpt2-chinese-cluecorpussmall")  # 中文 GPT-2（12/12/768, vocab 21128）
 REPO_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", ".."))
 
 PARAMS_DIR = os.path.join(REPO_ROOT, "src", "utils", "model", "params_output")
@@ -161,6 +163,7 @@ def export_onnx(model, dummy_input):
                for name in output_names if name != "linear_output"},
             "linear_output": {0: "0", 1: "1", 2: "2"},
         },
+        dynamo=False,  # torch>=2.9 默认走 dynamo 导出器(需 onnxscript)；强制用传统 TorchScript 导出器
     )
     size_mb = os.path.getsize(ONNX_PATH) / 1024 / 1024
     print(f"      已导出: {ONNX_PATH} ({size_mb:.1f} MB)")
