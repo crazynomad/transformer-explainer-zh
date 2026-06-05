@@ -84,7 +84,7 @@ export const modelMetaMap: Record<string, ModelMetaData> = {
 		tokenizer: 'gpt2-chinese', // 本地：static/models/gpt2-chinese/
 		localTokenizer: true,
 		addSpecialTokens: false, // BertTokenizer 默认会加 [CLS]/[SEP]，必须关掉
-		hasCachedExamples: false // 中文示例缓存尚未生成（见 INSTRUCTIONS）
+		hasCachedExamples: true // 已用 onnxruntime 离线生成中文 ex0..ex4（首屏秒开 + 移动端可用）
 	},
 	'gpt2-medium': { layer_num: 24, attention_head_num: 16, dimension: 1024 },
 	'gpt2-large': { layer_num: 36, attention_head_num: 20, dimension: 1280 }
