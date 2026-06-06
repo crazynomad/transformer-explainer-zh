@@ -212,14 +212,12 @@
 				{/if}
 				{#if $isMobile}
 					<span class="helper-text"
-						>Try the examples. Please use a desktop computer to input GPT-2 prompts directly.</span
+						>请先试试示例。如需直接输入文本，请使用桌面端浏览器。</span
 					>
 				{:else if $isLoaded && $isFetchingModel}
-					<span class="helper-text"
-						>Try the examples while GPT-2 model is being downloaded (600MB)</span
-					>
+					<span class="helper-text">模型下载中（约 456MB），可以先试试示例</span>
 				{:else if exceedLimit}
-					<span class="helper-text">You can enter up to {wordLimit} words.</span>
+					<span class="helper-text">最多可输入 {wordLimit} 个词。</span>
 				{/if}
 			</div>
 		</ButtonGroup>
