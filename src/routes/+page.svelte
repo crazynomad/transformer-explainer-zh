@@ -53,6 +53,7 @@
 
 	let active = false;
 	let appStartTime = Date.now();
+	let activeTokenizer: PreTrainedTokenizer; // 供 fetchModel 加载完成后直接触发实时推理
 
 	// fetch model
 	onMount(async () => {
@@ -65,6 +66,7 @@
 		}
 		const tokenizerName = activeModelMeta?.tokenizer ?? 'Xenova/gpt2';
 		const gpt2Tokenizer = await AutoTokenizer.from_pretrained(tokenizerName);
+		activeTokenizer = gpt2Tokenizer;
 		active = true;
 
 		// 无缓存模型(如中文版)：store 默认 tokens 是英文占位 ex0，模型加载前
@@ -121,10 +123,16 @@
 
 		isFetchingModel.set(false);
 
-		// 无预生成示例缓存的模型（如中文版）：模型加载完后主动触发一次实时推理，
-		// 否则初始画面会停留在 store 的英文默认数据上。
-		if (!activeModelMeta?.hasCachedExamples) {
-			inputText.update((v) => v);
+		// 无预生成示例缓存的模型（如中文版）：模型加载完后主动跑一次实时推理。
+		// 注意：不能用 inputText.update((v)=>v) 触发——Svelte 的 writable 在值未变化时
+		// 不会通知订阅者(safe_not_equal)，runModel 不会执行。必须直接调用 runModel。
+		if (!activeModelMeta?.hasCachedExamples && activeTokenizer) {
+			runModel({
+				tokenizer: activeTokenizer,
+				input: $inputText.trim() === '' ? ' ' : $inputText.trim(),
+				temperature: $temperature,
+				sampling: $sampling
+			});
 		}
 
 		const loadTime = Date.now() - appStartTime;
