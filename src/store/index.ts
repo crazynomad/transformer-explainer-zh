@@ -165,3 +165,23 @@ export const isMobile = readable(false, (set) => {
 
 // User identification
 export const userId = writable<string | null>(null);
+
+// 语言切换（中文 zh / 英文 en），持久化到 localStorage，默认中文
+export type Lang = 'zh' | 'en';
+const getInitialLang = (): Lang => {
+	if (typeof localStorage !== 'undefined') {
+		const v = localStorage.getItem('te-lang');
+		if (v === 'en' || v === 'zh') return v;
+	}
+	return 'zh';
+};
+export const language = writable<Lang>(getInitialLang());
+if (typeof window !== 'undefined') {
+	language.subscribe((v) => {
+		try {
+			localStorage.setItem('te-lang', v);
+		} catch {
+			/* ignore */
+		}
+	});
+}

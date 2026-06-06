@@ -1,9 +1,16 @@
 <script lang="ts">
 	import { Button } from 'flowbite-svelte';
 	import { fade } from 'svelte/transition';
-	import { textbookCurrentPage } from '~/store';
+	import { textbookCurrentPage, language } from '~/store';
 	import { textPages } from '~/utils/textbookPages';
+	import { textbookContentEn } from '~/utils/textbookContentEn';
 	import TextbookNavigation from './TextbookNavigation.svelte';
+
+	// 按语言取标题/正文：英文用 textbookContentEn 覆盖，否则用页面里的中文
+	const pageTitle = (page: any, lang: string) =>
+		lang === 'en' ? (textbookContentEn[page?.id]?.title ?? page?.title) : page?.title;
+	const pageContent = (page: any, lang: string) =>
+		lang === 'en' ? (textbookContentEn[page?.id]?.content ?? page?.content) : page?.content;
 
 	export let onClose: () => void;
 
@@ -256,7 +263,7 @@
 		<div class="card-header">
 			<div class="flex w-full items-center justify-between">
 				<h3 class="text-lg font-semibold text-gray-900">
-					{textPages[$textbookCurrentPage].title}
+					{pageTitle(textPages[$textbookCurrentPage], $language)}
 				</h3>
 				<Button color="light" size="xs" class="close-btn" on:click={handleClose}>✕</Button>
 			</div>
@@ -270,7 +277,7 @@
 								{#if page.component}
 									<svelte:component this={page.component} />
 								{:else if page.content}
-									{@html page.content}
+									{@html pageContent(page, $language)}
 								{/if}
 							</div>
 						</div>

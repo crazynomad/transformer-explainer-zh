@@ -5,8 +5,11 @@
 	import InputForm from '~/components/InputForm.svelte';
 	import { ga } from '~/utils/event';
 	import Sampling from '~/components/Sampling.svelte';
+	import { language } from '~/store';
 
 	export let isActive;
+
+	const toggleLanguage = () => language.update((l) => (l === 'zh' ? 'en' : 'zh'));
 
 	// Check if current page is about page
 	$: isAboutPage = $page.url.pathname === '/about';
@@ -24,6 +27,15 @@
 		</div>
 	</div>
 	<div class="icons flex items-center gap-3">
+		<!-- 语言切换 中/EN -->
+		<button
+			class="lang-toggle"
+			on:click={toggleLanguage}
+			title={$language === 'zh' ? 'Switch to English' : '切换为中文'}
+			aria-label="language toggle"
+		>
+			{$language === 'zh' ? '中 / EN' : 'EN / 中'}
+		</button>
 		<!-- arxiv -->
 		<a href="https://arxiv.org/abs/2408.04619" target="_blank" data-click="pdf-btn">
 			<svg
@@ -124,6 +136,20 @@
 			flex-shrink: 0;
 			svg {
 				fill: theme('colors.gray.600');
+			}
+			.lang-toggle {
+				font-size: 0.8rem;
+				font-weight: 600;
+				white-space: nowrap;
+				color: theme('colors.gray.600');
+				border: 1px solid theme('colors.gray.300');
+				border-radius: 0.375rem;
+				padding: 0.15rem 0.5rem;
+				transition: all 0.15s ease;
+				&:hover {
+					color: theme('colors.purple.600');
+					border-color: theme('colors.purple.400');
+				}
 			}
 		}
 	}
