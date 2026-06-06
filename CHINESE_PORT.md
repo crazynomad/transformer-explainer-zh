@@ -89,7 +89,24 @@ npm run dev
 
 ---
 
-## 步骤 5（可选但推荐）：生成示例缓存，支持「秒开」与移动端
+## ⚠️ 关于示例缓存（已知问题，当前禁用）
+
+实测：用 onnxruntime 离线生成的中文 `ex0..ex4` 体积过大（每个 prompt 含 720 个
+注意力张量，最长的 ~2.9MB）。Vite/Rollup 在 **SSR / 打包**时解析这种超大单行对象
+字面量会卡死（dev 与 `npm run build` 都会 100% CPU 长时间不返回）。这与「渲染中文」
+无关，纯粹是静态文件太大拖垮工具链。
+
+因此当前：`hasCachedExamples=false`，`ex0..ex4` 仍是英文占位。
+- embedding 文字由 `+page.svelte` 的 `onMount` **即时分词**填充 → 立刻显示中文；
+- 其余区块在 456MB 模型加载完成后由**实时推理**填充为中文；
+- 代价：放弃了「首屏秒开」和「移动端」（移动端只用缓存、不下载模型）。
+
+若将来要恢复缓存：需先解决大文件问题（例如把 outputs 量化/抽稀、或改成运行时
+`fetch` 二进制而非 JS 模块导入），不要再用下面这种「整包 JSON 进 JS 模块」的方式。
+
+<details><summary>（已废弃）原始的浏览器捕获步骤</summary>
+
+## 步骤 5（已废弃）：生成示例缓存
 
 英文版的 `src/constants/examples/ex0.js ~ ex4.js` 是预跑好的结果，用于首屏秒开和移动端。
 中文版需要重新生成。开发期已内置一个浏览器助手：
@@ -105,6 +122,8 @@ npm run dev
 6. 全部完成后，把 `modelMetaMap['gpt2-zh'].hasCachedExamples` 改为 `true`。
 
 > 不做这步也能用，只是没有首屏秒开、移动端不可用。
+
+</details>
 
 ---
 
