@@ -84,7 +84,11 @@ export const modelMetaMap: Record<string, ModelMetaData> = {
 		tokenizer: 'gpt2-chinese', // 本地：static/models/gpt2-chinese/
 		localTokenizer: true,
 		addSpecialTokens: false, // BertTokenizer 默认会加 [CLS]/[SEP]，必须关掉
-		hasCachedExamples: true // 已用 onnxruntime 离线生成中文 ex0..ex4（首屏秒开 + 移动端可用）
+		// 中文示例缓存(ex0..ex4)曾尝试用 onnxruntime 离线生成，但文件过大(单个 prompt 含
+		// 720 个注意力张量，最大 ~3MB)，会拖垮 Vite/Rollup 的 SSR/打包(解析超大对象字面量)。
+		// 故保持 false：英文 ex 仅作占位，桌面端模型加载完即实时跑中文；
+		// embedding 文字另由 onMount 即时分词填充(见 +page.svelte)，避免英文回退。
+		hasCachedExamples: false
 	},
 	'gpt2-medium': { layer_num: 24, attention_head_num: 16, dimension: 1024 },
 	'gpt2-large': { layer_num: 36, attention_head_num: 20, dimension: 1280 }

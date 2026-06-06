@@ -20,7 +20,8 @@
 		blockIdx,
 		isTextbookOpen,
 		userId,
-		activeModelMeta
+		activeModelMeta,
+		tokenIds
 	} from '~/store';
 	import { PreTrainedTokenizer } from '@xenova/transformers';
 	import Sankey from '~/components/Sankey.svelte';
@@ -35,7 +36,7 @@
 	import { base } from '$app/paths';
 	import * as ort from 'onnxruntime-web';
 
-	import { adjustTemperature, runModel, fakeRunWithCachedData } from '~/utils/data';
+	import { adjustTemperature, runModel, fakeRunWithCachedData, getTokenization } from '~/utils/data';
 	import { fetchAndMergeChunks } from '~/utils/fetchChunks';
 	import { installExampleCapture } from '~/utils/captureExample';
 	import WeightPopovers from '~/components/WeightPopovers.svelte';
@@ -64,6 +65,22 @@
 		const tokenizerName = activeModelMeta?.tokenizer ?? 'Xenova/gpt2';
 		const gpt2Tokenizer = await AutoTokenizer.from_pretrained(tokenizerName);
 		active = true;
+
+		// 无缓存模型(如中文版)：store 默认 tokens 是英文占位 ex0，模型加载前
+		// embedding 会显示英文。这里一拿到分词器就先把当前输入分词填上，
+		// 让 embedding 立刻显示中文(Embedding 只依赖 tokens/tokenIds)。
+		if (!activeModelMeta?.hasCachedExamples) {
+			try {
+				const { token_ids, input_tokens } = await getTokenization(
+					gpt2Tokenizer,
+					$inputText.trim() === '' ? ' ' : $inputText.trim()
+				);
+				tokens.set(input_tokens);
+				tokenIds.set(token_ids);
+			} catch (e) {
+				console.error('初始分词失败:', e);
+			}
+		}
 
 		// 开发期：暴露 window.__dumpExample() 用于生成中文示例缓存（见 captureExample.ts）
 		if (import.meta.env.DEV) installExampleCapture();
