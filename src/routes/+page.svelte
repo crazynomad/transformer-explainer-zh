@@ -21,7 +21,8 @@
 		isTextbookOpen,
 		userId,
 		activeModelMeta,
-		tokenIds
+		tokenIds,
+		ACTIVE_MODEL
 	} from '~/store';
 	import { PreTrainedTokenizer } from '@xenova/transformers';
 	import Sankey from '~/components/Sankey.svelte';
@@ -101,8 +102,9 @@
 			.fill(0)
 			.map((d, i) => `${base}/model-v2/gpt2.onnx.part${i}`);
 
-		// Fetch from cache
-		const { hasCache, mergedArray } = await fetchAndMergeChunks(chunkUrls);
+		// Fetch from cache（缓存名按模型区分：英文 v2-gpt2 / 中文 v2-gpt2-zh，
+		// 避免不同模型的 chunk 互相串味导致合并出的模型损坏）
+		const { hasCache, mergedArray } = await fetchAndMergeChunks(chunkUrls, `v2-${ACTIVE_MODEL}`);
 
 		// Create a Blob from the merged array
 		const blob = new Blob([mergedArray], { type: 'application/octet-stream' });

@@ -1,8 +1,12 @@
 const CACHE_PREFIX = 'onnx-model-cache';
-const CACHE_NAME = `${CACHE_PREFIX}-v2`;
+// 缓存名按模型区分：不同模型(如英文 gpt2 / 中文 gpt2-zh)chunk 数和内容都不同，
+// 若共用同一缓存名+相同 URL，会把旧模型的 chunk 当作新模型的，导致合并出的
+// 模型损坏（protobuf 解析失败）。带 -v2 版本号，改了 chunk 切法时手动 +1。
+const cacheNameFor = (cacheKey = 'v2') => `${CACHE_PREFIX}-${cacheKey}`;
 
-async function fetchModelChunks(chunkUrls) {
-	await clearOldCaches();
+async function fetchModelChunks(chunkUrls, cacheKey) {
+	const CACHE_NAME = cacheNameFor(cacheKey);
+	await clearOldCaches(CACHE_NAME);
 
 	let hasCache = false;
 	const cache = await caches.open(CACHE_NAME);
@@ -31,8 +35,8 @@ async function fetchModelChunks(chunkUrls) {
 	return { hasCache, modelBuffers };
 }
 
-export async function fetchAndMergeChunks(urls) {
-	const { hasCache, modelBuffers: chunks } = await fetchModelChunks(urls);
+export async function fetchAndMergeChunks(urls, cacheKey) {
+	const { hasCache, modelBuffers: chunks } = await fetchModelChunks(urls, cacheKey);
 	const totalSize = chunks.reduce((acc, chunk) => acc + chunk.byteLength, 0);
 	const mergedArray = new Uint8Array(totalSize);
 	let offset = 0;
@@ -43,7 +47,7 @@ export async function fetchAndMergeChunks(urls) {
 	return { hasCache, mergedArray: mergedArray.buffer };
 }
 
-async function clearOldCaches() {
+async function clearOldCaches(CACHE_NAME) {
 	const cacheNames = await caches.keys();
 	await Promise.all(
 		cacheNames.map((name) => {
